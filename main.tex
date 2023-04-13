@@ -426,15 +426,15 @@ for epoch in range(num_epochs):
             if patience_counter >= patience:
                 print(f'Early stopping after {epoch + 1} epochs')
                 break
+    if (epoch+1) % 50 == 0:
+        print(f'Epoch {epoch+1}/{num_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Patience: {patience_counter}')
 
-    print(f'Epoch {epoch+1}/{num_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Patience: {patience_counter}')
-
-torch.save(best_model, 'best_model.pt')
+torch.save(best_model, 'soru5_model.pt')
 \end{python}
 
 \begin{figure}
     \centering
-    \includegraphics{best.png}
+    \includegraphics{soru5.png}
     \caption{Burada Epoch değerini 2000 aldım ve learning rate 0.001. Burada 222. epoch'ta early stopping sayesinde duruyor }
     \label{fig:my_pic}
 \end{figure}
@@ -454,9 +454,46 @@ torch.save(best_model, 'best_model.pt')
 \subsection{(10 Puan)} \textbf{SEED=öğrenci numaranız set ettikten sonra altıncı haftada ödev olarak verdiğim gibi earlystopping'deki en iyi modeli kullanarak, Prensesi İyileştir test setinden accuracy, F1, precision ve recall değerlerini hesaplayan kodu yazın ve sonucu da aşağı yapıştırın. \%80'den fazla başarı bekliyorum test setinden. Daha düşükse başarı oranınız, nerede hata yaptığınızı bulmaya çalışın. \%90'dan fazla başarı almak mümkün (ben denedim).}
 
 \begin{python}
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+def accuracy(y_true, y_pred):
+    correct = 0
+    for i in range(len(y_true)):
+        if y_true[i] == y_pred[i]:
+            correct += 1
+    return correct / len(y_true)
 
-model.load_state_dict(torch.load('best_model.pt'))
+def precision(y_true, y_pred):
+    true_positives = 0
+    false_positives = 0
+    for i in range(len(y_true)):
+        if y_true[i] == 1 and y_pred[i] == 1:
+            true_positives += 1
+        elif y_true[i] == 0 and y_pred[i] == 1:
+            false_positives += 1
+    if true_positives + false_positives == 0:
+        return 0
+    else:
+        return true_positives / (true_positives + false_positives)
+
+def recall(y_true, y_pred):
+    true_positives = 0
+    false_negatives = 0
+    for i in range(len(y_true)):
+        if y_true[i] == 1 and y_pred[i] == 1:
+            true_positives += 1
+        elif y_true[i] == 1 and y_pred[i] == 0:
+            false_negatives += 1
+    if true_positives + false_negatives == 0:
+        return 0
+    else:
+        return true_positives / (true_positives + false_negatives)
+
+def f1_score(y_true, y_pred):
+    prec = precision(y_true, y_pred)
+    rec = recall(y_true, y_pred)
+    if prec + rec == 0:
+        return 0
+    else:
+        return 2 * (prec * rec) / (prec + rec)
 
 test_predictions = []
 test_labels = []
@@ -468,15 +505,16 @@ with torch.no_grad():
         test_predictions.extend(predicted.detach().cpu().numpy())
         test_labels.extend(labels.detach().cpu().numpy())
 
-accuracy = accuracy_score(test_labels, test_predictions)
+accuracy = accuracy(test_labels, test_predictions)
 f1 = f1_score(test_labels, test_predictions)
-precision = precision_score(test_labels, test_predictions)
-recall = recall_score(test_labels, test_predictions)
+precision = precision(test_labels, test_predictions)
+recall = recall(test_labels, test_predictions)
 
 print(f'Accuracy: {accuracy:.4f}')
 print(f'F1 score: {f1:.4f}')
 print(f'Precision: {precision:.4f}')
 print(f'Recall: {recall:.4f}')
+
 \end{python}
 
 Accuracy: 0.9443
@@ -488,14 +526,16 @@ Recall: 0.9278
 
 \begin{table}[ht!]
     \centering
-    \caption{Ben projeyi local bilgisayarımda yaptım bu yüzden sonuçlar biraz ilginç çıktı}
+    \caption{Ben projeyi local bilgisayarımda yaptım bu yüzden sonuçlar biraz ilginç çıktı. Sonuçları 2000 epoch içi hazırladım. }
     \begin{tabular}{c|c}
         Ortam & Süre (saniye) \\\hline
-        CPU & 12sn \\
-        GPU & 28sn\\
+        CPU & 123sn \\
+        GPU & 244sn\\
     \end{tabular}
     \label{tab:my_table}
 \end{table}
+
+\pagebreak
 
 \subsection{(3 Puan)} \textbf{Modelin eğitim setine overfit etmesi için elinizden geldiği kadar kodu gereken şekilde değiştirin, validasyon loss'unun açıkça yükselmeye başladığı, training ve validation loss'ları içeren figürü aşağı koyun ve overfit için yaptığınız değişiklikleri aşağı yazın. Overfit, tam bir çanak gibi olmalı ve yükselmeli. Ona göre parametrelerle oynayın.}
 
@@ -503,7 +543,7 @@ Early stopping özelliğini kaldırdım böylece grafik epoch arttıkça overfit
 
 \begin{figure}[ht!]
     \centering
-    \includegraphics{worst.png}
+    \includegraphics{soru5_overfit.png}
     \caption{}
     \label{fig:my_psic}
 \end{figure}
@@ -553,8 +593,6 @@ class MLP(nn.Module):
 model = MLP().to(device)
 criterion = nn.BCELoss()
 optimizer = torch.optim.SGD(model.parameters(), lr=0.001, weight_decay=0.01)
-
-print(devam_ise_buraya)
 \end{python}
 
 \subsection{(2 puan)} \textbf{Test setinden yeni accuracy, F1, precision ve recall değerlerini hesaplayıp aşağı koyun:}
